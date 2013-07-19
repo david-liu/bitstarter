@@ -2,7 +2,7 @@ var express = require('express');
 var fs = requires('fs');
 var app = express();
 
-var htmlfile = "index.html"
+var htmlfile = "index.html";
 app.use(express.logger());
 
 app.get('/', function(request, response) {
