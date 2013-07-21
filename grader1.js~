@@ -45,9 +45,9 @@ var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
 };
 
-
-
-var checkHtmlFile = function($, checksfile, remote) {
+var checkHtmlFile = function(htmlfile, checksfile, remote) {
+    if(!remote) {
+	$ = cheerioHtmlFile(htmlfile);
 	var checks = loadChecks(checksfile).sort();
     var out = {};
     for(var ii in checks) {
@@ -55,6 +55,30 @@ var checkHtmlFile = function($, checksfile, remote) {
         out[checks[ii]] = present;
     }
     return out;
+
+    } else  {
+	rest.get(htmlfile).on('complete', function(data) {
+	    $ = cheerio.load(data);
+	    var checks = loadChecks(checksfile).sort();
+	    var out = {};
+	    for(var ii in checks) {
+		var present = $(checks[ii]).length > 0;
+		out[checks[ii]] = present;
+	    }
+	    return out;
+
+	});
+	//console.log(htmlsource);
+
+	//$ = cheerio.load(htmlsource);
+    }
+    //var checks = loadChecks(checksfile).sort();
+    //var out = {};
+    //for(var ii in checks) {
+    //    var present = $(checks[ii]).length > 0;
+    //    out[checks[ii]] = present;
+    //}
+    //return out;
 };
 
 
@@ -73,18 +97,14 @@ if(require.main == module) {
         .option('-u --url <url_address>', 'Url to checking file')
         .parse(process.argv);
     if(program.file) {
-	$ = cheerioHtmlFile(program.file);
-	var checkJson = checkHtmlFile($, program.checks, false);
+	var checkJson = checkHtmlFile(program.file, program.checks, false);
 	var outJson = JSON.stringify(checkJson, null, 4);
 	console.log(outJson);
     } else if(program.url) {
-	rest.get(program.url).on('complete', function(data) {
-	    $ = cheerio.load(data);
-	    var checkJson = checkHtmlFile($, program.checks, true);
-            var outJson = JSON.stringify(checkJson, null, 4);
-            console.log(outJson);
-	});    
-   } else {
+	var checkJson = checkHtmlFile(program.url, program.checks, true);
+        var outJson = JSON.stringify(checkJson, null, 4);
+        console.log(outJson);
+    } else {
 	console.log("You must specify the file to check with -f or -c");
         process.exit(1);
     }
